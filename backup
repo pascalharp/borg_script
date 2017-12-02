@@ -1,0 +1,132 @@
+#!/bin/bash
+
+#path to reposatory (user@host:/path/to/rep)
+export BORG_REPO=user@host:/path/to/repo
+#uncomment next line if using special ssh options ("ssh -i /path/to/rsa_key")
+#export BORG_RSH="ssh -i /path/to/rsa_key"
+
+# how many backups to keep when using prune option 
+KEEP_DAILY="5"
+KEEP_WEEKLY="7"
+KEEP_MONTHLY="4"
+
+#home directory "/home/user" 
+BASE="/home/user"
+
+# Directorys/Files to backup "$BASE/directory1 $BASE/directory2 /directory/not/in/home"
+OBJ="$BASE/directory1 $BASE/directory2 /directory/not/in/home"
+
+# archive name flags 
+HOSTNAME="$(hostname)"
+DATE=$(date '+%d:%m:%Y_%H:%M:%S') 
+
+# crete flags, this can be set with arguments
+CREATE_FLAGS=""
+# prune flags
+PRUNE_FLAGS="--prefix ${HOSTNAME} --keep-daily ${KEEP_DAILY} --keep-weekly ${KEEP_WEEKLY} --keep-monthly
+${KEEP_MONTHLY}"
+
+# helpers
+DO_CREATE=0
+DO_PRUNE=0
+DO_LIST=0
+DO_INFO=0
+REPO_PWD=""
+create_exit=0
+prune_exit=0
+
+if [ $# -eq 0 ]
+then
+    echo "No option selected"
+    echo "Use on or multiple options:"
+    echo "  list   - lists archives of the reposatory"
+    echo "  info   - prints information of the reposatory"
+    echo "  create - creates backup"
+    echo "  prune  - cleans reposatory"
+    echo "  -l     - only in combination with create. List all files to backup"
+    echo "  -d     - only in combination with create. Dry run"
+    echo "  -s     - only in combination with create. Show stats"
+    exit
+fi
+
+# ask for rep password
+echo "Repo password:"
+read -s REPO_PWD
+export BORG_PASSPHRASE=${REPO_PWD}
+# check arguments
+while [ $# -gt 0 ]
+do
+    case "$1" in
+
+	"list")
+	    DO_LIST=1        
+	    ;;
+	"info")
+	    DO_INFO=1
+	    ;;
+	"create")
+	    DO_CREATE=1
+	    ;;
+	"prune")
+	    DO_PRUNE=1
+	    ;;
+	"-l")
+	    CREATE_FLAGS="${CREATE_FLAGS} --list"
+	    ;;
+	"-d")
+	    CREATE_FLAGS="${CREATE_FLAGS} -n"
+	    ;;
+	"-s")
+	    CREATE_FLAGS="${CREATE_FLAGS} --stats"
+	    ;; 
+    esac
+    shift
+done
+
+# do info
+if [ ${DO_INFO} -gt 0 ]
+then
+    echo ">> Reposatory information"
+    borg info
+fi
+
+# do list
+if [ ${DO_LIST} -gt 0 ]
+then
+    echo ">> Listing archives"
+    borg list
+fi
+
+# do backup
+if [ ${DO_CREATE} -gt 0 ]
+then
+    echo ">> Starting backup"
+    borg create ${CREATE_FLAGS} ::${HOSTNAME}-${DATE} ${OBJ}
+    create_exit=$?
+fi
+
+# do prune 
+if [ ${DO_PRUNE} -gt 0 ]
+then
+    echo ">> Starting prune"
+    borg prune ${PRUNE_FLAGS} 
+    prune_exit=$?
+fi
+
+# thanks to: http://borgbackup.readthedocs.io/en/stable/quickstart.html
+# use highest exit code as global exit code
+global_exit=$(( create_exit > prune_exit ? create_exit : prune_exit ))
+
+if [ ${global_exit} -eq 1 ];
+then
+    info "Backup and/or Prune finished with a warning"
+fi
+
+if [ ${global_exit} -gt 1 ];
+then
+    info "Backup and/or Prune finished with an error"
+fi
+
+echo ">> Done"
+
+exit ${global_exit}
