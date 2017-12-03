@@ -2,8 +2,12 @@
 
 #path to reposatory (user@host:/path/to/rep)
 export BORG_REPO=user@host:/path/to/repo
+
 #uncomment next line if using special ssh options ("ssh -i /path/to/rsa_key")
 #export BORG_RSH="ssh -i /path/to/rsa_key"
+
+#uncomment next line or set enviroment variable somewhere else if you dont want to be asked for your password
+#export BORG_PASSPHRASE=password
 
 # how many backups to keep when using prune option 
 KEEP_DAILY="5"
@@ -49,10 +53,14 @@ then
     exit
 fi
 
-# ask for rep password
-echo "Repo password:"
-read -s REPO_PWD
-export BORG_PASSPHRASE=${REPO_PWD}
+if [[ ! -v BORG_PASSPHRASE ]]
+then
+    # ask for rep password
+    echo "Repo password:"
+    read -s REPO_PWD
+    export BORG_PASSPHRASE=${REPO_PWD}
+fi
+
 # check arguments
 while [ $# -gt 0 ]
 do
