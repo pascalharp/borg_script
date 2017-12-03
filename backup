@@ -27,8 +27,7 @@ DATE=$(date '+%d:%m:%Y_%H:%M:%S')
 # crete flags, this can be set with arguments
 CREATE_FLAGS=""
 # prune flags
-PRUNE_FLAGS="--prefix ${HOSTNAME} --keep-daily ${KEEP_DAILY} --keep-weekly ${KEEP_WEEKLY} --keep-monthly
-${KEEP_MONTHLY}"
+PRUNE_FLAGS="--prefix ${HOSTNAME} --keep-daily ${KEEP_DAILY} --keep-weekly ${KEEP_WEEKLY} --keep-monthly ${KEEP_MONTHLY}"
 
 # helpers
 DO_CREATE=0
