@@ -53,14 +53,6 @@ then
     exit
 fi
 
-if [[ ! -v BORG_PASSPHRASE ]]
-then
-    # ask for rep password
-    echo "Repo password:"
-    read -s REPO_PWD
-    export BORG_PASSPHRASE=${REPO_PWD}
-fi
-
 # check arguments
 while [ $# -gt 0 ]
 do
@@ -87,9 +79,20 @@ do
 	"-s")
 	    CREATE_FLAGS="${CREATE_FLAGS} --stats"
 	    ;; 
+	*)
+	    echo "Invalid argument $1, ignoring"
+	    ;;
     esac
     shift
 done
+
+if [[ ! -v BORG_PASSPHRASE ]]
+then
+    # ask for rep password
+    echo "Repo password:"
+    read -s REPO_PWD
+    export BORG_PASSPHRASE=${REPO_PWD}
+fi
 
 # do info
 if [ ${DO_INFO} -gt 0 ]
